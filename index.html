@@ -1,0 +1,1209 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Luiz — Designer Gráfico</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg: "hsl(var(--bg) / <alpha-value>)",
+          surface: "hsl(var(--surface) / <alpha-value>)",
+          "text-primary": "hsl(var(--text) / <alpha-value>)",
+          muted: "hsl(var(--muted) / <alpha-value>)",
+          stroke: "hsl(var(--stroke) / <alpha-value>)",
+          accent: "hsl(var(--accent) / <alpha-value>)",
+        },
+        fontFamily: {
+          body: ["Inter", "sans-serif"],
+          display: ["Instrument Serif", "serif"],
+        },
+      },
+    },
+  };
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+
+<style>
+  :root {
+    --bg: 0 0% 4%;
+    --surface: 0 0% 8%;
+    --text: 0 0% 96%;
+    --muted: 0 0% 53%;
+    --stroke: 0 0% 12%;
+    --accent: 0 0% 96%;
+    --font-body: 'Inter', sans-serif;
+    --font-display: 'Instrument Serif', serif;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font-body); background: hsl(var(--bg)); color: hsl(var(--text)); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  body.loading, body.modal-open { overflow: hidden; }
+
+  .accent-gradient { background: linear-gradient(90deg, #89AACC 0%, #4E85BF 100%); }
+  .accent-gradient-animated {
+    background: linear-gradient(90deg, #89AACC, #4E85BF, #89AACC);
+    background-size: 200% 200%;
+    animation: gradient-shift 6s ease infinite;
+  }
+
+  @keyframes scroll-down { 0% { transform: translateY(-100%); } 100% { transform: translateY(200%); } }
+  @keyframes role-fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  .animate-scroll-down { animation: scroll-down 1.5s ease-in-out infinite; }
+  .animate-role-fade-in { animation: role-fade-in 0.4s ease-out; }
+
+  .logo-ring { background: linear-gradient(90deg, #89AACC 0%, #4E85BF 100%); transition: transform .3s ease; }
+  .logo:hover .logo-ring { background: linear-gradient(270deg, #89AACC 0%, #4E85BF 100%); }
+
+  .ring-btn { position: relative; isolation: isolate; }
+  .ring-btn .ring { position: absolute; inset: -2px; border-radius: 9999px; opacity: 0; transition: opacity .3s ease; z-index: -1; }
+  .ring-btn:hover .ring { opacity: 1; }
+
+  .word { transition: opacity .35s ease, transform .35s ease; }
+  .word.out { opacity: 0; transform: translateY(-20px); }
+  .word.in-start { opacity: 0; transform: translateY(20px); transition: none; }
+
+  #app { opacity: 0; transition: opacity .8s ease; }
+  #app.ready { opacity: 1; }
+
+  .halftone { background-image: radial-gradient(circle, #000 1px, transparent 1px); background-size: 4px 4px; }
+  .reveal { opacity: 0; transform: translateY(30px); }
+
+  @keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.6); } 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } }
+  .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+  /* Modais / pop-ups */
+  .modal { transition: opacity .3s ease; }
+  .modal.closed { opacity: 0; pointer-events: none; }
+  .modal .modal-card { transition: transform .4s cubic-bezier(.25,.1,.25,1), opacity .4s ease; }
+  .modal.closed .modal-card { transform: translateY(24px) scale(.98); opacity: 0; }
+  .modal .drawer { transition: transform .5s cubic-bezier(.25,.1,.25,1); }
+  .modal.closed .drawer { transform: translateX(100%); }
+
+  /* ===== Light Rays (React Bits) ===== */
+  .light-rays { overflow: hidden; pointer-events: none; }
+  .light-rays__canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+
+  /* ===== Gato do final ===== */
+  .sunburst {
+    background:
+      radial-gradient(circle at 85% 40%, transparent 0, hsl(var(--bg)) 75%),
+      repeating-conic-gradient(from 0deg at 85% 40%, #161616 0deg 6deg, #0d0d0d 6deg 12deg);
+  }
+  .cat-eye { transform-box: fill-box; transform-origin: center; animation: blink 4.5s infinite; }
+  @keyframes blink { 0%, 90%, 100% { transform: scaleY(1); } 93% { transform: scaleY(0.08); } 96% { transform: scaleY(1); } 97.5% { transform: scaleY(0.08); } 99% { transform: scaleY(1); } }
+  .cat-tail { transform-box: fill-box; transform-origin: 0% 100%; animation: tail 3s ease-in-out infinite; }
+  @keyframes tail { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-8deg); } }
+  .cat-ear { transform-box: fill-box; transform-origin: 50% 100%; animation: ear 6s ease-in-out infinite; }
+  @keyframes ear { 0%, 80%, 100% { transform: rotate(0); } 83% { transform: rotate(-10deg); } 86% { transform: rotate(0); } }
+  .cat-svg { filter: drop-shadow(6px 6px 0 #4E85BF); }
+  .term { font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+  .term-cursor { display: inline-block; width: .6em; height: 1.1em; background: #89AACC; vertical-align: -0.2em; margin-left: 2px; animation: cursor 1s steps(1) infinite; }
+  @keyframes cursor { 50% { opacity: 0; } }
+</style>
+</head>
+
+<body class="loading bg-bg text-text-primary font-body">
+
+<!-- ============ TELA DE CARREGAMENTO ============ -->
+<div id="loader" class="fixed inset-0 z-[9999] bg-bg">
+  <div id="loader-label" class="absolute top-6 left-6 md:top-10 md:left-10 text-xs text-muted uppercase tracking-[0.3em] opacity-0" style="transform:translateY(-20px)">Portfólio</div>
+  <div class="absolute inset-0 flex items-center justify-center">
+    <span id="loader-word" class="word text-4xl md:text-6xl lg:text-7xl font-display italic text-text-primary/80">Design</span>
+  </div>
+  <div id="loader-count" class="absolute bottom-10 right-6 md:bottom-14 md:right-10 text-6xl md:text-8xl lg:text-9xl font-display text-text-primary tabular-nums leading-none">000</div>
+  <div class="absolute bottom-0 left-0 right-0 h-[3px] bg-stroke/50">
+    <div id="loader-bar" class="h-full accent-gradient origin-left" style="transform:scaleX(0); box-shadow:0 0 8px rgba(137,170,204,0.35)"></div>
+  </div>
+</div>
+
+<!-- ============ NAVBAR ============ -->
+<nav class="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 md:pt-6 px-4">
+  <div id="nav-pill" class="inline-flex items-center rounded-full backdrop-blur-md border border-white/10 bg-surface px-2 py-2 transition-shadow duration-300">
+    <a href="#inicio" class="logo group flex items-center justify-center" aria-label="Início">
+      <span class="logo-ring w-9 h-9 rounded-full p-[2px] flex items-center justify-center group-hover:scale-110">
+        <span class="w-full h-full rounded-full bg-bg flex items-center justify-center font-display italic text-[13px]">LZ</span>
+      </span>
+    </a>
+    <span class="hidden sm:block w-px h-5 bg-stroke mx-1"></span>
+    <a href="#inicio" data-nav="inicio" class="nav-link text-xs sm:text-sm rounded-full px-3 sm:px-4 py-1.5 sm:py-2 transition-colors">Início</a>
+    <a href="#projetos" data-nav="projetos" class="nav-link text-xs sm:text-sm rounded-full px-3 sm:px-4 py-1.5 sm:py-2 transition-colors">Projetos</a>
+    <a href="#trabalhos" data-nav="trabalhos" class="nav-link text-xs sm:text-sm rounded-full px-3 sm:px-4 py-1.5 sm:py-2 transition-colors">Trabalhos</a>
+    <span class="hidden sm:block w-px h-5 bg-stroke mx-1"></span>
+    <button type="button" data-open-contact class="ring-btn group text-xs sm:text-sm rounded-full">
+      <span class="ring accent-gradient"></span>
+      <span class="relative inline-flex items-center gap-1 bg-surface rounded-full backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2">Diga oi <span>↗</span></span>
+    </button>
+  </div>
+</nav>
+
+<div id="app">
+
+<!-- ============ HERO ============ -->
+<section id="inicio" class="relative h-screen w-full overflow-hidden flex items-center justify-center">
+  <div id="hero-rays" class="light-rays absolute inset-0">
+    <canvas class="light-rays__canvas" aria-hidden="true"></canvas>
+  </div>
+  <div class="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-bg to-transparent"></div>
+
+  <div class="relative z-10 flex flex-col items-center text-center px-6">
+    <p class="blur-in text-xs text-muted uppercase tracking-[0.3em] mb-8">Coleção '26</p>
+    <h1 class="name-reveal text-7xl md:text-9xl lg:text-[10rem] font-display italic leading-[0.9] tracking-tight text-text-primary mb-6">Luiz</h1>
+    <p class="blur-in text-base md:text-lg text-text-primary/80 mb-4">
+      Sou designer gráfico e trabalho com <span id="role" class="font-display italic text-text-primary animate-role-fade-in inline-block">marketing digital</span>.
+    </p>
+    <p class="blur-in text-sm md:text-base text-muted max-w-md mb-12">Criando marcas, conteúdos e campanhas que conectam pessoas — da ideia ao post publicado.</p>
+    <div class="blur-in inline-flex gap-4">
+      <a href="#projetos" class="ring-btn group rounded-full text-sm hover:scale-105 transition-transform duration-300">
+        <span class="ring accent-gradient"></span>
+        <span class="relative block rounded-full px-7 py-3.5 bg-text-primary text-bg group-hover:bg-bg group-hover:text-text-primary transition-colors duration-300">Ver trabalhos</span>
+      </a>
+      <button type="button" data-open-contact class="ring-btn group rounded-full text-sm hover:scale-105 transition-transform duration-300">
+        <span class="ring accent-gradient"></span>
+        <span class="relative block rounded-full px-7 py-3.5 border-2 border-stroke group-hover:border-transparent bg-bg text-text-primary transition-colors duration-300">Contato</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3">
+    <span class="text-xs text-muted uppercase tracking-[0.2em]">Role</span>
+    <span class="relative w-px h-10 bg-stroke overflow-hidden">
+      <span class="absolute top-0 left-0 w-full h-1/2 bg-text-primary animate-scroll-down"></span>
+    </span>
+  </div>
+</section>
+
+<!-- ============ PROJETOS EM DESTAQUE ============ -->
+<section id="projetos" class="bg-bg py-12 md:py-16">
+  <div class="max-w-[1200px] mx-auto px-6 md:px-10 lg:px-16">
+    <div class="reveal flex items-end justify-between gap-6 mb-10 md:mb-14">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <span class="w-8 h-px bg-stroke"></span>
+          <span class="text-xs text-muted uppercase tracking-[0.3em]">Trabalhos selecionados</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight mb-4">Projetos em <span class="font-display italic">destaque</span></h2>
+        <p class="text-sm md:text-base text-muted max-w-md">Uma seleção de projetos em que trabalhei, do conceito ao lançamento. Clique para ver os detalhes.</p>
+      </div>
+      <a href="#trabalhos" class="ring-btn group hidden md:inline-flex rounded-full text-sm shrink-0">
+        <span class="ring accent-gradient"></span>
+        <span class="relative inline-flex items-center gap-2 rounded-full border border-stroke group-hover:border-transparent bg-bg px-6 py-3 transition-colors">Ver todos <span>→</span></span>
+      </a>
+    </div>
+    <div id="works-grid" class="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6"></div>
+  </div>
+</section>
+
+<!-- ============ TRABALHOS RECENTES ============ -->
+<section id="trabalhos" class="bg-bg py-16 md:py-24">
+  <div class="max-w-[1200px] mx-auto px-6 md:px-10 lg:px-16">
+    <div class="reveal flex items-end justify-between gap-6 mb-10 md:mb-14">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <span class="w-8 h-px bg-stroke"></span>
+          <span class="text-xs text-muted uppercase tracking-[0.3em]">Portfólio</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight mb-4">Trabalhos <span class="font-display italic">recentes</span></h2>
+        <p class="text-sm md:text-base text-muted max-w-md">Marcas e projetos com que trabalho ou trabalhei nos últimos anos.</p>
+      </div>
+    </div>
+    <div id="journal-list" class="flex flex-col gap-4"></div>
+  </div>
+</section>
+
+<!-- ============ EXPLORAÇÕES ============ -->
+<section id="exploracoes" class="relative min-h-[300vh] bg-bg">
+  <div id="explore-pin" class="h-screen w-full flex flex-col items-center justify-center text-center px-6 relative z-10">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="w-8 h-px bg-stroke"></span>
+      <span class="text-xs text-muted uppercase tracking-[0.3em]">Explorações</span>
+      <span class="w-8 h-px bg-stroke"></span>
+    </div>
+    <h2 class="text-5xl md:text-7xl lg:text-8xl font-light tracking-tight mb-6">Laboratório <span class="font-display italic">visual</span></h2>
+    <p class="text-sm md:text-base text-muted max-w-md mb-10">Experimentos, estampas e estudos visuais que mantêm a criatividade afiada.</p>
+    <a id="explore-insta" href="#" target="_blank" rel="noopener" class="ring-btn group rounded-full text-sm hover:scale-105 transition-transform">
+      <span class="ring accent-gradient"></span>
+      <span class="relative inline-flex items-center gap-2 rounded-full border border-stroke group-hover:border-transparent bg-bg px-6 py-3 transition-colors">Ver no Instagram <span>↗</span></span>
+    </a>
+  </div>
+  <div class="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+    <div class="max-w-[1400px] mx-auto px-6 h-full grid grid-cols-2 gap-12 md:gap-40 pt-[100vh]">
+      <div id="col-left" class="flex flex-col items-end gap-24 md:gap-40"></div>
+      <div id="col-right" class="flex flex-col items-start gap-24 md:gap-40 pt-[40vh]"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NÚMEROS ============ -->
+<section id="numeros" class="bg-bg py-16 md:py-24">
+  <div class="max-w-[1200px] mx-auto px-6 md:px-10 lg:px-16">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6">
+      <div class="reveal border-t border-stroke pt-8">
+        <div class="text-6xl md:text-7xl lg:text-8xl font-display"><span class="count" data-to="7">0</span>+</div>
+        <p class="text-xs text-muted uppercase tracking-[0.3em] mt-4">Anos de experiência</p>
+      </div>
+      <div class="reveal border-t border-stroke pt-8">
+        <div class="text-6xl md:text-7xl lg:text-8xl font-display"><span class="count" data-to="79">0</span>M</div>
+        <p class="text-xs text-muted uppercase tracking-[0.3em] mt-4">Views em um único vídeo</p>
+      </div>
+      <div class="reveal border-t border-stroke pt-8">
+        <div class="text-6xl md:text-7xl lg:text-8xl font-display"><span class="count" data-to="15">0</span>+</div>
+        <p class="text-xs text-muted uppercase tracking-[0.3em] mt-4">Influenciadores gerenciados</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTATO / RODAPÉ ============ -->
+<section id="contato" class="relative bg-bg pt-16 md:pt-20 pb-8 md:pb-12 overflow-hidden">
+  <video id="footer-video" class="absolute top-1/2 left-1/2 min-w-full min-h-full object-cover -translate-x-1/2 -translate-y-1/2 scale-y-[-1]" autoplay muted loop playsinline></video>
+  <div class="absolute inset-0 bg-black/60"></div>
+  <div class="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-bg to-transparent"></div>
+
+  <div class="relative z-10">
+    <div class="overflow-hidden whitespace-nowrap py-6 md:py-10">
+      <div id="marquee" class="inline-flex text-6xl md:text-8xl lg:text-9xl font-display italic text-text-primary/90"></div>
+    </div>
+
+    <div class="flex flex-col items-center text-center px-6 py-16 md:py-24">
+      <p class="text-xs text-muted uppercase tracking-[0.3em] mb-6">Tem um projeto em mente?</p>
+      <h2 class="text-4xl md:text-6xl font-light tracking-tight mb-10">Vamos trabalhar <span class="font-display italic">juntos</span></h2>
+      <button type="button" data-open-contact class="ring-btn group rounded-full text-sm md:text-base hover:scale-105 transition-transform">
+        <span class="ring accent-gradient"></span>
+        <span class="relative inline-flex items-center gap-2 rounded-full border-2 border-stroke group-hover:border-transparent bg-bg px-8 py-4 transition-colors">Entrar em contato <span>↗</span></span>
+      </button>
+    </div>
+
+    <div class="max-w-[1200px] mx-auto px-6 md:px-10 lg:px-16">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6 border-t border-white/10 pt-8">
+        <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-muted">
+          <a data-link="linkedin" href="#" target="_blank" rel="noopener" class="hover:text-text-primary transition-colors">LinkedIn</a>
+          <a data-link="email" href="#" class="hover:text-text-primary transition-colors">E-mail</a>
+          <a data-link="whatsapp" href="#" target="_blank" rel="noopener" class="hover:text-text-primary transition-colors">WhatsApp</a>
+        </div>
+        <div class="flex items-center gap-3 text-sm text-muted">
+          <span class="w-2 h-2 rounded-full bg-green-500 pulse-dot"></span>
+          Disponível para projetos
+        </div>
+      </div>
+      <p class="text-center md:text-left text-xs text-muted/60 mt-6">© 2026 Luiz · Designer Gráfico & Marketing Digital</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GATO DO FINAL ============ -->
+<section id="fim" class="sunburst relative overflow-hidden min-h-[640px] md:min-h-[720px]">
+  <!-- Caixa de fala estilo terminal -->
+  <div class="relative z-20 max-w-[1200px] mx-auto px-6 md:px-10 lg:px-16 pt-16 md:pt-20">
+    <div class="relative w-full max-w-[480px] md:ml-[8%]">
+      <span class="term absolute -top-3 left-6 z-10 rounded-full accent-gradient text-bg text-xs font-medium tracking-[0.15em] px-3 py-1">MIAU.EXE</span>
+      <div class="term rounded-[22px] border border-[#4E85BF]/70 bg-[#0e0e0e]/90 backdrop-blur-sm px-6 pt-7 pb-4 shadow-[0_0_30px_rgba(78,133,191,0.15)]">
+        <div class="flex gap-4">
+          <p class="flex-1 text-[13px] md:text-sm leading-relaxed text-text-primary min-h-[4.5em]">
+            <span class="text-[#89AACC]">C:\Luiz&gt;</span> <span id="term-text"></span><span class="term-cursor"></span>
+          </p>
+          <button id="term-next" type="button" class="self-center text-[#4E85BF] hover:text-[#89AACC] hover:translate-x-0.5 transition" aria-label="Próxima mensagem">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.5v13L14 8z"/></svg>
+          </button>
+        </div>
+        <div class="flex items-center justify-between mt-3">
+          <div id="term-dots" class="flex gap-3"></div>
+          <span id="term-count" class="text-[11px] text-[#4E85BF]">1 de 3</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gato (ilustração original) -->
+  <svg class="cat-svg absolute bottom-0 left-[-40px] md:left-[2%] z-10 w-[420px] md:w-[560px] h-auto" viewBox="0 0 560 440" aria-hidden="true">
+    <!-- rabo -->
+    <path class="cat-tail" d="M390 400 C 470 390, 500 320, 470 270 C 455 245, 430 250, 438 272 C 460 320, 440 360, 380 370 Z" fill="#1c1c1e" stroke="#4E85BF" stroke-width="3"/>
+    <!-- corpo -->
+    <path d="M110 440 C 100 360, 140 300, 230 290 C 320 282, 410 320, 420 440 Z" fill="#1c1c1e" stroke="#4E85BF" stroke-width="3"/>
+    <!-- orelhas -->
+    <path class="cat-ear" d="M118 150 L 108 40 L 200 105 Z" fill="#1c1c1e" stroke="#4E85BF" stroke-width="3"/>
+    <path d="M128 135 L 122 70 L 178 108 Z" fill="#4E85BF" opacity=".55"/>
+    <path d="M300 105 L 388 40 L 380 150 Z" fill="#1c1c1e" stroke="#4E85BF" stroke-width="3"/>
+    <path d="M318 108 L 372 70 L 368 135 Z" fill="#4E85BF" opacity=".55"/>
+    <!-- cabeça -->
+    <ellipse cx="248" cy="185" rx="150" ry="118" fill="#1c1c1e" stroke="#4E85BF" stroke-width="3"/>
+    <!-- olhos -->
+    <g class="cat-eye">
+      <ellipse cx="190" cy="180" rx="26" ry="22" fill="#89AACC"/>
+      <ellipse cx="194" cy="182" rx="9" ry="18" fill="#0a0a0a"/>
+      <circle cx="200" cy="172" r="5" fill="#fff"/>
+    </g>
+    <g class="cat-eye">
+      <ellipse cx="306" cy="180" rx="26" ry="22" fill="#89AACC"/>
+      <ellipse cx="302" cy="182" rx="9" ry="18" fill="#0a0a0a"/>
+      <circle cx="312" cy="172" r="5" fill="#fff"/>
+    </g>
+    <!-- focinho e boca -->
+    <path d="M238 220 L 258 220 L 248 232 Z" fill="#4E85BF"/>
+    <path d="M248 232 C 244 244, 230 246, 224 238 M248 232 C 252 244, 266 246, 272 238" fill="none" stroke="#89AACC" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- bigodes -->
+    <g stroke="#89AACC" stroke-width="1.6" stroke-linecap="round" opacity=".8">
+      <path d="M170 225 L 70 210"/><path d="M170 235 L 66 240"/><path d="M175 245 L 85 268"/>
+      <path d="M326 225 L 430 210"/><path d="M326 235 L 434 240"/><path d="M321 245 L 412 268"/>
+    </g>
+    <!-- patinhas cruzadas -->
+    <path d="M150 440 C 150 395, 175 378, 250 382 C 300 385, 320 400, 318 440 Z" fill="#232325" stroke="#4E85BF" stroke-width="3"/>
+    <path d="M210 440 C 214 405, 240 392, 300 396 C 350 400, 370 415, 368 440 Z" fill="#1c1c1e" stroke="#4E85BF" stroke-width="3"/>
+    <g stroke="#4E85BF" stroke-width="2" stroke-linecap="round" opacity=".7">
+      <path d="M330 420 L 332 436"/><path d="M346 418 L 348 436"/>
+    </g>
+  </svg>
+
+  <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-bg/80 to-transparent z-0"></div>
+</section>
+
+</div><!-- /#app -->
+
+<!-- ============ POP-UP: CONTATO ============ -->
+<div id="modal-contact" class="modal closed fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="contact-title">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-md" data-close></div>
+  <div class="modal-card relative w-full max-w-md bg-surface border border-stroke rounded-3xl p-8 md:p-10">
+    <button type="button" data-close class="absolute top-4 right-4 w-10 h-10 rounded-full border border-stroke text-muted hover:text-text-primary hover:bg-stroke/50 transition-colors" aria-label="Fechar">✕</button>
+    <p class="text-xs text-muted uppercase tracking-[0.3em] mb-4">Contato</p>
+    <h3 id="contact-title" class="text-3xl md:text-4xl font-light tracking-tight mb-3">Vamos <span class="font-display italic">conversar?</span></h3>
+    <p class="text-sm text-muted mb-8">Entre em contato pelo canal que preferir. Respondo o mais rápido possível.</p>
+    <div class="flex flex-col gap-3">
+      <a data-link="whatsapp" href="#" target="_blank" rel="noopener" class="ring-btn group rounded-full">
+        <span class="ring accent-gradient"></span>
+        <span class="relative flex items-center gap-4 rounded-full border border-stroke group-hover:border-transparent bg-bg px-5 py-4 transition-colors">
+          <span class="w-9 h-9 rounded-full bg-[#25D366]/15 text-[#25D366] flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.6 7.3L3 21l2.3-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
+          </span>
+          <span class="flex-1 text-sm">WhatsApp</span><span class="text-muted">↗</span>
+        </span>
+      </a>
+      <a data-link="linkedin" href="#" target="_blank" rel="noopener" class="ring-btn group rounded-full">
+        <span class="ring accent-gradient"></span>
+        <span class="relative flex items-center gap-4 rounded-full border border-stroke group-hover:border-transparent bg-bg px-5 py-4 transition-colors">
+          <span class="w-9 h-9 rounded-full bg-[#0A66C2]/20 text-[#5B9BE0] flex items-center justify-center text-sm font-bold">in</span>
+          <span class="flex-1 text-sm">LinkedIn</span><span class="text-muted">↗</span>
+        </span>
+      </a>
+      <a data-link="email" href="#" class="ring-btn group rounded-full">
+        <span class="ring accent-gradient"></span>
+        <span class="relative flex items-center gap-4 rounded-full border border-stroke group-hover:border-transparent bg-bg px-5 py-4 transition-colors">
+          <span class="w-9 h-9 rounded-full bg-white/10 text-text-primary flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          </span>
+          <span class="flex-1 text-sm">E-mail</span><span class="text-muted">↗</span>
+        </span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ABA: DETALHES DO PROJETO ============ -->
+<div id="modal-project" class="modal closed fixed inset-0 z-[200] flex justify-end" role="dialog" aria-modal="true">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-md" data-close></div>
+  <aside class="drawer relative w-full max-w-2xl h-full bg-surface border-l border-stroke overflow-y-auto">
+    <button type="button" data-close class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-bg/70 backdrop-blur-md border border-stroke text-muted hover:text-text-primary transition-colors" aria-label="Fechar">✕</button>
+    <div class="aspect-[16/10] w-full overflow-hidden bg-bg">
+      <img id="p-img" src="" alt="" class="w-full h-full object-cover" />
+    </div>
+    <div class="p-8 md:p-12">
+      <p id="p-cat" class="text-xs text-muted uppercase tracking-[0.3em] mb-4"></p>
+      <h3 id="p-title" class="text-4xl md:text-6xl font-display italic leading-none mb-6"></h3>
+      <div id="p-desc" class="text-sm md:text-base text-muted leading-relaxed space-y-4 mb-10"></div>
+      <div class="border-t border-stroke pt-8 mb-10">
+        <p class="text-xs text-muted uppercase tracking-[0.3em] mb-5">O que eu fiz</p>
+        <ul id="p-list" class="flex flex-wrap gap-2"></ul>
+      </div>
+      <button type="button" data-open-contact class="ring-btn group rounded-full text-sm">
+        <span class="ring accent-gradient"></span>
+        <span class="relative inline-flex items-center gap-2 rounded-full bg-text-primary text-bg group-hover:bg-bg group-hover:text-text-primary px-7 py-3.5 transition-colors">Quero um projeto assim <span>↗</span></span>
+      </button>
+    </div>
+  </aside>
+</div>
+
+<!-- ============ POP-UP: TRABALHO RECENTE ============ -->
+<div id="modal-work" class="modal closed fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-md" data-close></div>
+  <div class="modal-card relative w-full max-w-md bg-surface border border-stroke rounded-3xl overflow-hidden">
+    <button type="button" data-close class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-bg/70 backdrop-blur-md border border-stroke text-muted hover:text-text-primary transition-colors" aria-label="Fechar">✕</button>
+    <img id="w-img" src="" alt="" class="w-full aspect-[16/9] object-cover" />
+    <div class="p-8">
+      <p id="w-cat" class="text-xs text-muted uppercase tracking-[0.3em] mb-3"></p>
+      <h3 id="w-title" class="text-3xl md:text-4xl font-display italic leading-none mb-4"></h3>
+      <p id="w-desc" class="text-sm text-muted leading-relaxed mb-8"></p>
+      <a id="w-insta" href="#" target="_blank" rel="noopener" class="ring-btn group flex rounded-full">
+        <span class="ring accent-gradient"></span>
+        <span class="relative flex flex-1 items-center gap-4 rounded-full border border-stroke group-hover:border-transparent bg-bg px-5 py-4 transition-colors">
+          <span class="w-9 h-9 rounded-full flex items-center justify-center text-white" style="background:linear-gradient(45deg,#F58529,#DD2A7B,#8134AF)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor"/></svg>
+          </span>
+          <span class="flex-1 text-sm">Ver no Instagram</span><span class="text-muted">↗</span>
+        </span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="modal closed fixed inset-0 z-[200] bg-bg/90 backdrop-blur-lg flex items-center justify-center p-6 cursor-zoom-out">
+  <img id="lightbox-img" src="" alt="" class="modal-card max-w-full max-h-[85vh] rounded-3xl border border-stroke" />
+</div>
+
+<script>
+/* ===================================================================
+   LightRays — componente do React Bits convertido para JavaScript puro
+   Uso: LightRays(containerEl, { raysOrigin, raysColor, ... })
+   =================================================================== */
+window.LightRays = (function () {
+  const PIXEL_BUDGET = 2.4e6;
+  const MAX_PULSES = 4;
+  const ORIGINS = {
+    'top-left': { anchor: [0, -0.2], dir: [0, 1] },
+    'top-center': { anchor: [0.5, -0.2], dir: [0, 1] },
+    'top-right': { anchor: [1, -0.2], dir: [0, 1] },
+    left: { anchor: [-0.2, 0.5], dir: [1, 0] },
+    right: { anchor: [1.2, 0.5], dir: [-1, 0] },
+    'bottom-left': { anchor: [0, 1.2], dir: [0, -1] },
+    'bottom-center': { anchor: [0.5, 1.2], dir: [0, -1] },
+    'bottom-right': { anchor: [1, 1.2], dir: [0, -1] }
+  };
+
+  const VERTEX = `#version 300 es
+const vec2 corners[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
+void main() {
+  gl_Position = vec4(corners[gl_VertexID], 0.0, 1.0);
+}`;
+
+  const FRAGMENT = `#version 300 es
+precision highp float;
+uniform vec2 uResolution;
+uniform float uScale;
+uniform float uTime;
+uniform vec2 uSource;
+uniform vec2 uAim;
+uniform float uReach;
+uniform vec3 uColor;
+uniform float uSpread;
+uniform float uLength;
+uniform float uFade;
+uniform float uSaturation;
+uniform float uPulsating;
+uniform float uNoise;
+uniform float uDistortion;
+uniform float uDensity;
+uniform float uSharpness;
+uniform float uGlow;
+uniform float uHaze;
+uniform float uAtmosphere;
+uniform float uIntensity;
+uniform vec4 uShadow;
+uniform vec4 uPulses[${MAX_PULSES}];
+uniform vec2 uIntro;
+uniform float uLight;
+uniform float uOpacity;
+out vec4 fragColor;
+
+float hash(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+
+float valueNoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = p - i;
+  vec2 w = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), w.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), w.x), w.y);
+}
+
+float shape(float strength, float width) {
+  float edge = max(mix(0.5, 0.08, uSharpness), width);
+  return mix(strength, smoothstep(0.62 - edge, 0.62 + edge, strength), uSharpness);
+}
+
+void main() {
+  vec2 coord = vec2(gl_FragCoord.x, uResolution.y - gl_FragCoord.y) / uScale;
+  vec2 delta = coord - uSource;
+  float distance = length(delta);
+  vec2 dir = delta / max(distance, 1e-4);
+  float cosAngle = dot(dir, uAim);
+  float angle = cosAngle + uDistortion * sin(uTime * 2.0 + distance * 0.02) * 0.2;
+  float slope = fwidth(angle);
+  float depth = distance / uReach;
+
+  float source = exp(-depth * depth * 9.0) * 0.9 + exp(-depth * 3.2) * 0.25;
+  float glowLight = uGlow * source * smoothstep(-0.2, 0.6, cosAngle);
+  float spread = pow(max(angle, 0.0), 1.0 / uSpread);
+  float lengthFalloff = clamp(1.0 - distance / (uReach * uLength), 0.0, 1.0);
+  float fadeFalloff = clamp(1.0 - distance / (uReach * uFade), 0.5, 1.0);
+  float envelope = spread * lengthFalloff * fadeFalloff;
+  float reveal = uIntensity * uIntro.y * (1.0 - smoothstep(uIntro.x - 0.35, uIntro.x, depth));
+  if ((envelope * 1.6 + glowLight) * reveal < 0.0015) {
+    fragColor = vec4(0.0);
+    return;
+  }
+
+  float phaseA = angle * 36.2214 * uDensity + uTime * 1.5;
+  float phaseB = -angle * 21.11349 * uDensity + uTime * 1.5;
+  float phaseC = angle * 22.3991 * uDensity + uTime * 1.1;
+  float phaseD = -angle * 18.0234 * uDensity + uTime * 1.1;
+  float strengthA = clamp(0.75 + 0.15 * sin(phaseA) + 0.2 * cos(phaseB), 0.0, 1.0);
+  float strengthB = clamp(0.75 + 0.15 * sin(phaseC) + 0.2 * cos(phaseD), 0.0, 1.0);
+  float widthA = abs(0.15 * 36.2214 * cos(phaseA) + 0.2 * 21.11349 * sin(phaseB)) * uDensity * slope;
+  float widthB = abs(0.15 * 22.3991 * cos(phaseC) + 0.2 * 18.0234 * sin(phaseD)) * uDensity * slope;
+  float pulseA = uPulsating > 0.5 ? 0.8 + 0.2 * sin(uTime * 4.5) : 1.0;
+  float pulseB = uPulsating > 0.5 ? 0.8 + 0.2 * sin(uTime * 3.3) : 1.0;
+  float rayLight = envelope * (0.5 * shape(strengthA, widthA) * pulseA + 0.4 * shape(strengthB, widthB) * pulseB);
+
+  if (uHaze > 0.0) {
+    float around = atan(uAim.x * dir.y - uAim.y * dir.x, cosAngle);
+    vec2 drift = vec2(around * 2.2 + uTime * 0.035, depth * 2.6 - uTime * 0.11);
+    float fog = 0.65 * valueNoise(drift * vec2(3.0, 1.0)) + 0.35 * valueNoise(drift * vec2(7.0, 2.3) + 4.1);
+    rayLight *= mix(1.0, 0.25 + 1.2 * fog, uHaze);
+  }
+
+  if (uShadow.z > 0.0) {
+    vec2 toCursor = uShadow.xy - uSource;
+    float cursorDistance = length(toCursor);
+    float along = dot(delta, toCursor) / max(cursorDistance * cursorDistance, 1e-4);
+    float side = abs(delta.x * toCursor.y - delta.y * toCursor.x) / max(cursorDistance, 1e-4);
+    float trail = max(along - 1.0, 0.0);
+    float width = uShadow.w * along + 0.22 * trail * cursorDistance;
+    float behind = smoothstep(0.97, 1.25, along) * exp(-trail * 1.1);
+    float shade = (1.0 - smoothstep(width * 0.3, width * 1.6, side)) * behind;
+    rayLight *= 1.0 - uShadow.z * 0.62 * shade;
+  }
+
+  float boost = 0.0;
+  for (int i = 0; i < ${MAX_PULSES}; i++) {
+    vec4 wave = uPulses[i];
+    if (wave.z <= 0.0) continue;
+    float x = (depth - wave.x) / wave.y;
+    boost += wave.z * exp(-x * x);
+  }
+  float light = (rayLight * (1.0 + boost) + glowLight) * reveal;
+
+  if (uNoise > 0.0) {
+    float n = fract(sin(dot(coord * 0.02 + uTime * 0.1, vec2(12.9898, 78.233))) * 43758.5453123);
+    light *= 1.0 - uNoise + uNoise * n;
+  }
+
+  float near = clamp(1.2 - distance / (uResolution.y / uScale), 0.0, 1.0);
+  vec3 tint = mix(vec3(0.9), vec3(0.1, 0.3, 0.5) + near * vec3(0.8, 0.6, 0.5), uAtmosphere);
+  float gray = dot(tint, vec3(0.299, 0.587, 0.114));
+  vec3 hue = max(mix(vec3(gray), tint, uSaturation), 0.0) * uColor;
+
+  float grain = (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) - 0.5) / 255.0;
+  if (uLight > 0.5) {
+    vec3 color = hue * light;
+    float energy = max(color.r, max(color.g, color.b));
+    vec3 tone = clamp(1.0 - (1.0 - hue / max(max(hue.r, max(hue.g, hue.b)), 1e-4)) * 1.8, 0.0, 1.0);
+    float warm = clamp((min(tone.r, tone.g) - tone.b) * 2.0, 0.0, 1.0);
+    vec3 ink = tone * (mix(0.66, 0.94, warm) - 0.1 * smoothstep(0.4, 1.2, energy));
+    float density = clamp(0.82 * (1.0 - exp(-1.5 * energy * energy)) * uOpacity + grain, 0.0, 1.0);
+    fragColor = vec4(ink * density, density);
+    return;
+  }
+  float level = light < 0.75 ? light : 0.75 + 0.25 * (1.0 - exp(-(light - 0.75) / 0.25));
+  float top = max(hue.r, max(hue.g, hue.b));
+  hue = mix(hue, vec3(top), smoothstep(0.8, 1.0, level) * 0.45);
+  vec3 shown = clamp(hue * level, 0.0, 1.0) * level;
+  fragColor = vec4(clamp(shown + grain, 0.0, level) * uOpacity, level * uOpacity);
+}`;
+
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+  const parseColor = value => {
+    const text = String(value || '').trim();
+    const hex = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(text);
+    if (hex) {
+      const full = hex[1].length === 3 ? hex[1].replace(/./g, d => d + d) : hex[1];
+      return [0, 2, 4].map(i => parseInt(full.slice(i, i + 2), 16) / 255);
+    }
+    const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(text);
+    if (rgb) return [rgb[1], rgb[2], rgb[3]].map(c => clamp(parseFloat(c) / 255, 0, 1));
+    return null;
+  };
+  const compile = (gl, type, source) => {
+    const shader = gl.createShader(type);
+    if (!shader) return null;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
+  };
+  const link = gl => {
+    const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
+    const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
+    const program = vertex && fragment ? gl.createProgram() : null;
+    if (!vertex || !fragment || !program) {
+      if (vertex) gl.deleteShader(vertex);
+      if (fragment) gl.deleteShader(fragment);
+      return null;
+    }
+    gl.attachShader(program, vertex);
+    gl.attachShader(program, fragment);
+    gl.linkProgram(program);
+    gl.deleteShader(vertex);
+    gl.deleteShader(fragment);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error(gl.getProgramInfoLog(program));
+      gl.deleteProgram(program);
+      return null;
+    }
+    const uniforms = {};
+    const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < count; i++) {
+      const info = gl.getActiveUniform(program, i);
+      if (info) uniforms[info.name.replace(/\[0\]$/, '')] = gl.getUniformLocation(program, info.name);
+    }
+    return { program, uniforms };
+  };
+  const smoother = t => { const x = clamp(t, 0, 1); return x * x * x * (x * (x * 6 - 15) + 10); };
+
+  return function LightRays(container, o = {}) {
+    if (!container) return;
+    const canvas = container.querySelector('canvas');
+    const p = Object.assign({
+      raysOrigin: 'top-center', raysColor: '#ffffff', raysSpeed: 1, lightSpread: 0.5, rayLength: 3,
+      rayDensity: 1, tilt: 0, raySharpness: 0.35, glow: 0.6, haze: 0.25, atmosphere: 1, intensity: 1,
+      pulsating: false, fadeDistance: 1, saturation: 1, followMouse: true, mouseInfluence: 0.1,
+      cursorShadow: true, clickPulse: true, noiseAmount: 0, distortion: 0, intro: true, lightMode: false,
+      opacity: 1, maxDevicePixelRatio: 2
+    }, o);
+    const s = {
+      origin: ORIGINS[p.raysOrigin] || ORIGINS['top-center'],
+      color: parseColor(p.raysColor) || [1, 1, 1],
+      speed: Math.max(0, p.raysSpeed),
+      spread: Math.max(0.001, p.lightSpread),
+      length: Math.max(0.01, p.rayLength),
+      density: clamp(p.rayDensity, 0.1, 6),
+      tilt: (clamp(p.tilt, -90, 90) * Math.PI) / 180,
+      sharpness: clamp(p.raySharpness, 0, 1),
+      glow: Math.max(0, p.glow),
+      haze: clamp(p.haze, 0, 1),
+      atmosphere: clamp(p.atmosphere, 0, 1),
+      intensity: Math.max(0, p.intensity),
+      pulsating: p.pulsating,
+      fade: Math.max(0.01, p.fadeDistance),
+      saturation: Math.max(0, p.saturation),
+      follow: p.followMouse,
+      influence: clamp(p.mouseInfluence, 0, 1),
+      cursorShadow: p.cursorShadow,
+      clickPulse: p.clickPulse,
+      noise: clamp(p.noiseAmount, 0, 1),
+      distortion: p.distortion,
+      intro: p.intro,
+      light: p.lightMode,
+      opacity: clamp(p.opacity, 0, 1),
+      maxRatio: clamp(p.maxDevicePixelRatio, 0.5, 3)
+    };
+
+    let generation = 0;
+    function start() {
+      const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'high-performance' });
+      const shader = gl ? link(gl) : null;
+      if (!gl || !shader) return;
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const vao = gl.createVertexArray();
+      const size = { width: 1, height: 1, ratio: 1 };
+      const pointer = { x: 0.5, y: 0.5, inside: false, seen: false };
+      const aim = { x: 0.5, y: 0.5 };
+      const shade = { x: 0.5, y: 0.5, presence: 0 };
+      const pulses = [];
+      const pulseData = new Float32Array(MAX_PULSES * 4);
+      let time = 0;
+      let opening = s.intro && !reduced && generation === 0 ? 0 : 1;
+      let raf = 0, last = 0, visible = true, lost = false;
+      let pageVisible = document.visibilityState !== 'hidden';
+
+      const resize = () => {
+        const rect = container.getBoundingClientRect();
+        const cssWidth = Math.max(1, rect.width), cssHeight = Math.max(1, rect.height);
+        const detail = s.density * (0.35 + 0.65 * s.sharpness);
+        const sampling = Math.max(clamp(0.35 + 0.3 * detail, 0.5, 2), s.noise > 0 ? 1 : 0);
+        const ratio = Math.min(window.devicePixelRatio || 1, s.maxRatio, sampling, Math.sqrt(PIXEL_BUDGET / (cssWidth * cssHeight)));
+        const width = Math.max(1, Math.round(cssWidth * ratio)), height = Math.max(1, Math.round(cssHeight * ratio));
+        if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+        size.width = cssWidth; size.height = cssHeight; size.ratio = width / cssWidth;
+      };
+
+      const frame = now => {
+        raf = 0;
+        if (lost) return;
+        const dt = clamp((now - last) / 1000 || 0, 0, 0.05);
+        last = Math.max(last, now);
+        time += dt * s.speed * (reduced ? 0.35 : 1);
+        if (opening < 1) opening = Math.min(1, opening + dt / 1.8);
+
+        const steer = 1 - Math.exp(-dt / 0.2);
+        const aimX = s.follow && pointer.seen ? pointer.x : 0.5;
+        const aimY = s.follow && pointer.seen ? pointer.y : 0.5;
+        aim.x += (aimX - aim.x) * steer;
+        aim.y += (aimY - aim.y) * steer;
+        const glide = 1 - Math.exp(-dt / 0.08);
+        shade.x += (pointer.x - shade.x) * glide;
+        shade.y += (pointer.y - shade.y) * glide;
+        const shading = pointer.inside && s.cursorShadow && !reduced;
+        shade.presence += ((shading ? 1 : 0) - shade.presence) * (1 - Math.exp(-dt / (shading ? 0.25 : 0.5)));
+
+        for (let i = pulses.length - 1; i >= 0; i--) { pulses[i].age += dt; if (pulses[i].age >= 2) pulses.splice(i, 1); }
+        pulseData.fill(0);
+        pulses.forEach((pulse, i) => {
+          const t = pulse.age;
+          pulseData[i * 4] = 0.05 + t * 1.05;
+          pulseData[i * 4 + 1] = 0.14 + t * 0.14;
+          pulseData[i * 4 + 2] = 0.9 * smoother(t / 0.15) * (1 - smoother(t / 2));
+        });
+
+        const width = size.width, height = size.height;
+        const sourceX = s.origin.anchor[0] * width, sourceY = s.origin.anchor[1] * height;
+        const cos = Math.cos(s.tilt), sin = Math.sin(s.tilt);
+        let dirX = s.origin.dir[0] * cos - s.origin.dir[1] * sin;
+        let dirY = s.origin.dir[0] * sin + s.origin.dir[1] * cos;
+        if (s.follow && s.influence > 0) {
+          const mx = aim.x * width - sourceX, my = aim.y * height - sourceY;
+          const ml = Math.hypot(mx, my) || 1;
+          const bx = dirX + (mx / ml - dirX) * s.influence, by = dirY + (my / ml - dirY) * s.influence;
+          const bl = Math.hypot(bx, by) || 1;
+          dirX = bx / bl; dirY = by / bl;
+        }
+        const eased = 1 - Math.pow(1 - opening, 3);
+
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(shader.program);
+        gl.bindVertexArray(vao);
+        const u = shader.uniforms;
+        gl.uniform2f(u.uResolution, canvas.width, canvas.height);
+        gl.uniform1f(u.uScale, size.ratio);
+        gl.uniform1f(u.uTime, time);
+        gl.uniform2f(u.uSource, sourceX, sourceY);
+        gl.uniform2f(u.uAim, dirX, dirY);
+        gl.uniform1f(u.uReach, Math.max(width, height));
+        gl.uniform3f(u.uColor, s.color[0], s.color[1], s.color[2]);
+        gl.uniform1f(u.uSpread, s.spread);
+        gl.uniform1f(u.uLength, s.length);
+        gl.uniform1f(u.uFade, s.fade);
+        gl.uniform1f(u.uSaturation, s.saturation);
+        gl.uniform1f(u.uPulsating, s.pulsating ? 1 : 0);
+        gl.uniform1f(u.uNoise, s.noise);
+        gl.uniform1f(u.uDistortion, s.distortion);
+        gl.uniform1f(u.uDensity, s.density);
+        gl.uniform1f(u.uSharpness, s.sharpness);
+        gl.uniform1f(u.uGlow, s.glow);
+        gl.uniform1f(u.uHaze, s.haze);
+        gl.uniform1f(u.uAtmosphere, s.atmosphere);
+        gl.uniform1f(u.uIntensity, s.intensity);
+        gl.uniform4f(u.uShadow, shade.x * width, shade.y * height, shade.presence, 16);
+        gl.uniform4fv(u.uPulses, pulseData);
+        gl.uniform2f(u.uIntro, eased * 2.6, smoother(opening / 0.5));
+        gl.uniform1f(u.uLight, s.light ? 1 : 0);
+        gl.uniform1f(u.uOpacity, s.opacity);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        const settling =
+          Math.abs(aim.x - aimX) > 1e-4 || Math.abs(aim.y - aimY) > 1e-4 ||
+          (shade.presence > 1e-3 && Math.abs(shade.x - pointer.x) + Math.abs(shade.y - pointer.y) > 1e-4) ||
+          Math.abs((shading ? 1 : 0) - shade.presence) > 1e-3 || pulses.length > 0;
+        const busy = s.speed > 0 || opening < 1 || settling;
+        if (busy && visible && pageVisible) raf = requestAnimationFrame(frame);
+      };
+
+      const wake = () => {
+        if (raf || lost || !visible || !pageVisible) return;
+        last = performance.now();
+        raf = requestAnimationFrame(frame);
+      };
+      const locate = e => {
+        const r = container.getBoundingClientRect();
+        return {
+          x: (e.clientX - r.left) / Math.max(1, r.width),
+          y: (e.clientY - r.top) / Math.max(1, r.height),
+          inside: e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+        };
+      };
+      window.addEventListener('pointermove', e => {
+        const spot = locate(e);
+        if (!pointer.inside && spot.inside) { shade.x = spot.x; shade.y = spot.y; }
+        pointer.x = spot.x; pointer.y = spot.y; pointer.inside = spot.inside; pointer.seen = true;
+        wake();
+      }, { passive: true });
+      window.addEventListener('pointerdown', e => {
+        const spot = locate(e);
+        if (!spot.inside || !s.clickPulse || reduced) return;
+        pulses.push({ age: 0 });
+        if (pulses.length > MAX_PULSES) pulses.shift();
+        wake();
+      }, { passive: true });
+      const onLeave = () => { pointer.inside = false; wake(); };
+      const onUp = e => { if (e.pointerType !== 'mouse') onLeave(); };
+      window.addEventListener('pointerup', onUp, { passive: true });
+      window.addEventListener('pointercancel', onUp, { passive: true });
+      document.documentElement.addEventListener('pointerleave', onLeave);
+
+      canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); lost = true; cancelAnimationFrame(raf); raf = 0; }, { once: true });
+      canvas.addEventListener('webglcontextrestored', () => { generation++; start(); }, { once: true });
+
+      new ResizeObserver(() => { resize(); wake(); }).observe(container);
+      new IntersectionObserver(entries => { visible = entries.some(en => en.isIntersecting); wake(); }).observe(container);
+      document.addEventListener('visibilitychange', () => { pageVisible = document.visibilityState !== 'hidden'; wake(); });
+
+      resize();
+      wake();
+    }
+    start();
+  };
+})();
+</script>
+
+<script>
+(() => {
+  /* =====================================================
+     ✏️  SEUS DADOS — edite aqui
+     ===================================================== */
+  const CONTATO = {
+    whatsapp: "5511999999999",                              // DDI + DDD + número, só dígitos
+    whatsappMsg: "Olá Luiz! Vi seu portfólio e quero conversar sobre um projeto.",
+    linkedin: "https://www.linkedin.com/in/SEU-USUARIO",
+    email: "imlegp@gmail.com",
+    instagram: "https://www.instagram.com/",                // seu Instagram (seção Explorações)
+  };
+
+  // Projetos em destaque (abrem a aba lateral)
+  const PROJETOS = [
+    {
+      title: "YouTube", cat: "Conteúdo & Edição", img: "youtube.png",
+      span: "md:col-span-7", aspect: "aspect-[4/3]",
+      desc: [
+        "Produção de conteúdo para YouTube: edição de vídeos, thumbnails e identidade visual de canal, pensando em retenção e em fazer o público clicar.",
+        "Cada vídeo é montado com ritmo, cortes dinâmicos e artes que reforçam a marca do canal.",
+      ],
+      fiz: ["Edição de vídeo", "Thumbnails", "Identidade do canal", "Estratégia de conteúdo"],
+    },
+    {
+      title: "CazéTV × Xapo Store", cat: "Produto & Estamparia", img: "https://picsum.photos/seed/cazetv-shirt/1200/900",
+      span: "md:col-span-5", aspect: "aspect-[4/5] md:aspect-auto",
+      desc: [
+        "Desenvolvimento das camisetas exclusivas da CazéTV para a cobertura das Olimpíadas, feitas pela Xapo Store.",
+        "Do design da estampa à produção, as peças ficaram prontas em apenas 4 dias úteis.",
+      ],
+      fiz: ["Design de estampa", "Desenvolvimento de produto", "E-commerce"],
+    },
+    {
+      title: "Baile do Thom × Red Bull", cat: "Eventos & Design", img: "https://picsum.photos/seed/baile-redbull/1200/900",
+      span: "md:col-span-5", aspect: "aspect-[4/5] md:aspect-auto",
+      desc: [
+        "Sou produtor e designer gráfico do Baile do Thom, cuidando de toda a parte gráfica dos eventos.",
+        "O destaque foi a parceria com a Red Bull em um evento em Santos, que reuniu mais de 2 mil pessoas.",
+      ],
+      fiz: ["Identidade de evento", "Flyers e artes", "Produção"],
+    },
+    {
+      title: "Rafaela Goulart", cat: "Cortes & Redes Sociais", img: "https://picsum.photos/seed/rafaela-cortes/1200/900",
+      span: "md:col-span-7", aspect: "aspect-[4/3]",
+      desc: [
+        "Editor de vídeo da criadora Rafaela Goulart desde 2017: cortes das lives, UGC das parcerias e artes para as lives na Twitch.",
+        "Mais de 10 cortes por semana em todas as redes, um vídeo com 79 milhões de views e um Instagram que foi de 2 mil para 202 mil seguidores.",
+      ],
+      fiz: ["Cortes de lives", "UGC para marcas", "Artes para Twitch"],
+    },
+  ];
+
+  // Trabalhos recentes (abrem o pop-up com botão do Instagram)
+  const TRABALHOS = [
+    { title: "Eu Te Disse", cat: "Social media · Pagode", periodo: "2026 — hoje", img: "https://picsum.photos/seed/eutedisse/800/450",
+      desc: "Social media do grupo de pagode Eu Te Disse: cuido do Instagram e da agenda do grupo e filmo os shows e eventos.",
+      instagram: "https://www.instagram.com/" },
+    { title: "USE ANGRIFF", cat: "Marca própria · Camisetas", periodo: "2023 — hoje", img: "https://picsum.photos/seed/useangriff/800/450",
+      desc: "Minha marca pessoal de camisetas, criada do zero e tocada por mim em todas as frentes: design, produção e vendas.",
+      instagram: "https://www.instagram.com/" },
+    { title: "INKCT", cat: "UGC · Moda", periodo: "2024 — 2026", img: "https://picsum.photos/seed/inkct/800/450",
+      desc: "UGC Manager, marketing digital, e-commerce e design. A marca começou do zero e chegou a cerca de 28 mil seguidores.",
+      instagram: "https://www.instagram.com/" },
+    { title: "Izzy Print", cat: "Direção de arte · Estamparia", periodo: "2024 — 2025", img: "https://picsum.photos/seed/izzyprint/800/450",
+      desc: "Comecei no atendimento, assumi o Instagram e o design e me tornei líder da área de arte, atendendo marcas como Heineken, KaBuM!, NFL e Podpah.",
+      instagram: "https://www.instagram.com/" },
+  ];
+  /* ===================================================== */
+
+  gsap.registerPlugin(ScrollTrigger);
+  const HLS_SRC = "https://stream.mux.com/Aa02T7oM1wH5Mk5EEVDYhbZ1ChcdhRsS2m1NYyx4Ua1g.m3u8";
+  const ph = (seed, w, h) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
+
+  /* ---------- Links de contato ---------- */
+  const LINKS = {
+    whatsapp: `https://wa.me/${CONTATO.whatsapp}?text=${encodeURIComponent(CONTATO.whatsappMsg)}`,
+    linkedin: CONTATO.linkedin,
+    email: `mailto:${CONTATO.email}`,
+  };
+  document.querySelectorAll("[data-link]").forEach(a => (a.href = LINKS[a.dataset.link]));
+  document.getElementById("explore-insta").href = CONTATO.instagram;
+
+  /* ---------- Vídeo HLS ---------- */
+  function attachHls(video) {
+    if (!video) return;
+    if (window.Hls && Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(HLS_SRC);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = HLS_SRC;
+      video.play().catch(() => {});
+    }
+  }
+  attachHls(document.getElementById("footer-video"));
+
+  /* ---------- Fundo da home: Light Rays ---------- */
+  LightRays(document.getElementById("hero-rays"), {
+    raysOrigin: "top-center",
+    raysColor: "#ffffff",
+    raysSpeed: 1,
+    lightSpread: 0.5,
+    rayLength: 3,
+    glow: 0.6,
+    haze: 0.25,
+    followMouse: true,
+    mouseInfluence: 0.1,
+  });
+
+  /* ---------- Modais ---------- */
+  let openModalEl = null;
+  function openModal(id) {
+    if (openModalEl) openModalEl.classList.add("closed");
+    openModalEl = document.getElementById(id);
+    openModalEl.classList.remove("closed");
+    document.body.classList.add("modal-open");
+  }
+  function closeModal() {
+    if (!openModalEl) return;
+    openModalEl.classList.add("closed");
+    openModalEl = null;
+    document.body.classList.remove("modal-open");
+  }
+  document.querySelectorAll(".modal").forEach(m =>
+    m.addEventListener("click", e => { if (e.target.closest("[data-close]") || m.id === "lightbox") closeModal(); }));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+  document.querySelectorAll("[data-open-contact]").forEach(b => b.addEventListener("click", () => openModal("modal-contact")));
+
+  /* ---------- Projetos em destaque ---------- */
+  document.getElementById("works-grid").innerHTML = PROJETOS.map((p, i) => `
+    <button type="button" data-project="${i}" class="reveal group relative block text-left ${p.span} ${p.aspect} bg-surface border border-stroke rounded-3xl overflow-hidden">
+      <img src="${p.img}" alt="${p.title}" loading="lazy" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      <div class="halftone absolute inset-0 opacity-20 mix-blend-multiply pointer-events-none"></div>
+      <div class="absolute inset-0 bg-bg/70 opacity-0 group-hover:opacity-100 backdrop-blur-lg transition-opacity duration-500 flex items-center justify-center">
+        <span class="accent-gradient-animated rounded-full p-[2px] translate-y-3 group-hover:translate-y-0 transition-transform duration-500">
+          <span class="block rounded-full bg-white text-black text-sm px-5 py-2.5">Ver — <span class="font-display italic text-base">${p.title}</span></span>
+        </span>
+      </div>
+    </button>`).join("");
+
+  document.querySelectorAll("[data-project]").forEach(card => card.addEventListener("click", () => {
+    const p = PROJETOS[+card.dataset.project];
+    document.getElementById("p-img").src = p.img;
+    document.getElementById("p-img").alt = p.title;
+    document.getElementById("p-cat").textContent = p.cat;
+    document.getElementById("p-title").textContent = p.title;
+    document.getElementById("p-desc").innerHTML = p.desc.map(t => `<p>${t}</p>`).join("");
+    document.getElementById("p-list").innerHTML = p.fiz.map(t =>
+      `<li class="text-xs rounded-full border border-stroke px-4 py-2">${t}</li>`).join("");
+    document.querySelector("#modal-project .drawer").scrollTop = 0;
+    openModal("modal-project");
+  }));
+
+  /* ---------- Trabalhos recentes ---------- */
+  document.getElementById("journal-list").innerHTML = TRABALHOS.map((t, i) => `
+    <div class="reveal group flex items-center gap-6 p-4 bg-surface/30 hover:bg-surface border border-stroke rounded-[40px] sm:rounded-full transition-colors duration-300">
+      <img src="${t.img}" alt="" loading="lazy" class="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover shrink-0" />
+      <div class="flex-1 min-w-0">
+        <h3 class="text-base md:text-xl font-light">${t.title}</h3>
+        <p class="text-xs text-muted mt-1">${t.cat}<span class="sm:hidden"> · ${t.periodo}</span></p>
+      </div>
+      <span class="hidden sm:block text-xs text-muted uppercase tracking-[0.15em] shrink-0">${t.periodo}</span>
+      <button type="button" data-work="${i}" aria-label="Ver ${t.title}" class="w-11 h-11 shrink-0 rounded-full border border-stroke flex items-center justify-center text-text-primary hover:bg-text-primary hover:text-bg group-hover:-rotate-45 transition-all duration-300">→</button>
+    </div>`).join("");
+
+  document.querySelectorAll("[data-work]").forEach(btn => btn.addEventListener("click", () => {
+    const t = TRABALHOS[+btn.dataset.work];
+    document.getElementById("w-img").src = t.img;
+    document.getElementById("w-cat").textContent = `${t.cat} · ${t.periodo}`;
+    document.getElementById("w-title").textContent = t.title;
+    document.getElementById("w-desc").textContent = t.desc;
+    document.getElementById("w-insta").href = t.instagram;
+    openModal("modal-work");
+  }));
+
+  /* ---------- Explorações ---------- */
+  const explore = [
+    { seed: "explore-1", rot: -6 }, { seed: "explore-2", rot: 4 }, { seed: "explore-3", rot: -3 },
+    { seed: "explore-4", rot: 5 },  { seed: "explore-5", rot: -5 }, { seed: "explore-6", rot: 3 },
+  ];
+  const card = e => `
+    <button type="button" class="explore-card pointer-events-auto w-full max-w-[320px] aspect-square rounded-3xl overflow-hidden border border-stroke bg-surface cursor-zoom-in transition-transform duration-500 hover:scale-105" style="rotate:${e.rot}deg" data-full="${ph(e.seed, 1400, 1400)}">
+      <img src="${ph(e.seed, 640, 640)}" alt="" loading="lazy" class="w-full h-full object-cover" />
+    </button>`;
+  document.getElementById("col-left").innerHTML  = explore.filter((_, i) => i % 2 === 0).map(card).join("");
+  document.getElementById("col-right").innerHTML = explore.filter((_, i) => i % 2 === 1).map(card).join("");
+  document.querySelectorAll(".explore-card").forEach(c => c.addEventListener("click", () => {
+    document.getElementById("lightbox-img").src = c.dataset.full;
+    openModal("lightbox");
+  }));
+
+  /* ---------- Terminal do gato ---------- */
+  const MSGS = [
+    "Obrigado por ter visto até o final! 🐾",
+    "Curtiu o que viu? Bora criar algo juntos.",
+    "Clica em Contato e me chama no WhatsApp. Miau.",
+  ];
+  const termText = document.getElementById("term-text");
+  const termDots = document.getElementById("term-dots");
+  const termCount = document.getElementById("term-count");
+  termDots.innerHTML = MSGS.map(() => `<span class="w-1.5 h-1.5 rounded-full border border-[#4E85BF]"></span>`).join("");
+  let msgIndex = 0, typing = null, autoNext = null;
+  function typeMsg(i) {
+    msgIndex = i;
+    clearTimeout(typing); clearTimeout(autoNext);
+    termCount.textContent = `${i + 1} de ${MSGS.length}`;
+    [...termDots.children].forEach((d, k) => d.classList.toggle("bg-[#4E85BF]", k === i));
+    const chars = [...MSGS[i]]; let n = 0;
+    termText.textContent = "";
+    (function step() {
+      termText.textContent = chars.slice(0, ++n).join("");
+      if (n < chars.length) typing = setTimeout(step, 35 + Math.random() * 45);
+      else if (i < MSGS.length - 1) autoNext = setTimeout(() => typeMsg(i + 1), 2600);
+    })();
+  }
+  document.getElementById("term-next").addEventListener("click", () => typeMsg((msgIndex + 1) % MSGS.length));
+
+  /* ---------- Letreiro ---------- */
+  document.getElementById("marquee").innerHTML =
+    Array.from({ length: 2 }, () => `<span class="pr-4">${"LUIZ DESIGNER GRÁFICO • ".repeat(10)}</span>`).join("");
+
+  /* ---------- Tela de carregamento ---------- */
+  gsap.set([".name-reveal", ".blur-in"], { opacity: 0 });
+  const words = ["Design", "Criar", "Inspirar"];
+  const wordEl = document.getElementById("loader-word");
+  let wi = 0;
+  const wordTimer = setInterval(() => {
+    wordEl.classList.add("out");
+    setTimeout(() => {
+      wi = (wi + 1) % words.length;
+      wordEl.textContent = words[wi];
+      wordEl.classList.remove("out");
+      wordEl.classList.add("in-start");
+      requestAnimationFrame(() => requestAnimationFrame(() => wordEl.classList.remove("in-start")));
+    }, 350);
+  }, 900);
+  gsap.to("#loader-label", { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" });
+
+  const countEl = document.getElementById("loader-count"), barEl = document.getElementById("loader-bar");
+  const DURATION = 2700; let start = null;
+  function tick(t) {
+    if (start === null) start = t;
+    const count = Math.min(100, Math.floor(((t - start) / DURATION) * 100));
+    countEl.textContent = String(count).padStart(3, "0");
+    barEl.style.transform = `scaleX(${count / 100})`;
+    if (count < 100) requestAnimationFrame(tick);
+    else setTimeout(finishLoading, 400);
+  }
+  requestAnimationFrame(tick);
+
+  function finishLoading() {
+    clearInterval(wordTimer);
+    gsap.to("#loader", { opacity: 0, duration: 0.6, ease: "power2.out",
+      onComplete: () => document.getElementById("loader").remove() });
+    document.body.classList.remove("loading");
+    document.getElementById("app").classList.add("ready");
+    heroEntrance();
+    initScroll();
+  }
+
+  /* ---------- Hero ---------- */
+  function heroEntrance() {
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.fromTo(".name-reveal", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 1.2, delay: 0.1 }, 0)
+      .fromTo(".blur-in", { opacity: 0, filter: "blur(10px)", y: 20 },
+                          { opacity: 1, filter: "blur(0px)", y: 0, duration: 1, stagger: 0.1, delay: 0.3 }, 0);
+  }
+  const roles = ["marketing digital", "branding", "social media", "conteúdo"];
+  let ri = 0;
+  setInterval(() => {
+    ri = (ri + 1) % roles.length;
+    const old = document.getElementById("role");
+    const el = old.cloneNode(false);
+    el.textContent = roles[ri];
+    old.replaceWith(el);
+  }, 2000);
+
+  /* ---------- Navbar ---------- */
+  const pill = document.getElementById("nav-pill");
+  const onScroll = () => {
+    const s = window.scrollY > 100;
+    pill.classList.toggle("shadow-md", s);
+    pill.classList.toggle("shadow-black/10", s);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  const links = document.querySelectorAll(".nav-link");
+  function setActive(id) {
+    links.forEach(l => {
+      const on = l.dataset.nav === id;
+      ["text-text-primary", "bg-stroke/50"].forEach(c => l.classList.toggle(c, on));
+      ["text-muted", "hover:text-text-primary", "hover:bg-stroke/50"].forEach(c => l.classList.toggle(c, !on));
+    });
+  }
+  setActive("inicio");
+
+  /* ---------- Animações de rolagem ---------- */
+  function initScroll() {
+    [["inicio", "#inicio"], ["projetos", "#projetos"], ["trabalhos", "#trabalhos"]].forEach(([id, sel]) => {
+      ScrollTrigger.create({ trigger: sel, start: "top center", end: "bottom center",
+        onToggle: self => self.isActive && setActive(id) });
+    });
+
+    gsap.utils.toArray(".reveal").forEach(el => {
+      gsap.to(el, { opacity: 1, y: 0, duration: 1, ease: "power2.out",
+        scrollTrigger: { trigger: el, start: "top bottom-=100", once: true } });
+    });
+
+    ScrollTrigger.create({ trigger: "#exploracoes", start: "top top", end: "bottom bottom", pin: "#explore-pin", pinSpacing: false });
+    gsap.to("#col-left",  { y: "-60vh",  ease: "none", scrollTrigger: { trigger: "#exploracoes", start: "top bottom", end: "bottom top", scrub: true } });
+    gsap.to("#col-right", { y: "-120vh", ease: "none", scrollTrigger: { trigger: "#exploracoes", start: "top bottom", end: "bottom top", scrub: true } });
+
+    document.querySelectorAll(".count").forEach(el => {
+      const obj = { v: 0 };
+      gsap.to(obj, { v: +el.dataset.to, duration: 2, ease: "power2.out",
+        onUpdate: () => (el.textContent = Math.round(obj.v)),
+        scrollTrigger: { trigger: el, start: "top 85%", once: true } });
+    });
+
+    gsap.to("#marquee", { xPercent: -50, duration: 40, ease: "none", repeat: -1 });
+
+    // Gato: começa a "digitar" quando a seção aparece
+    ScrollTrigger.create({ trigger: "#fim", start: "top 70%", once: true, onEnter: () => typeMsg(0) });
+    gsap.from(".cat-svg", { y: 120, opacity: 0, duration: 1.2, ease: "power3.out",
+      scrollTrigger: { trigger: "#fim", start: "top 75%", once: true } });
+
+    ScrollTrigger.refresh();
+  }
+})();
+</script>
+</body>
+</html>
